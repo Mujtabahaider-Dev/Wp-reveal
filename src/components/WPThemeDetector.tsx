@@ -98,7 +98,8 @@ export const WPThemeDetector = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-primary hover:opacity-90 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+              variant="gradient"
+              className="w-full py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
