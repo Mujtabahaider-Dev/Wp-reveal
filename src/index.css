@@ -47,10 +47,11 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(var(--indigo-500)), hsl(var(--teal-400)));
     --gradient-background: linear-gradient(135deg, hsl(var(--indigo-500)), hsl(var(--teal-400)));
     
-    /* Glassmorphism */
+    /* Glassmorphism Light */
     --glass-backdrop: backdrop-blur-sm;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -105,6 +106,19 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark mode WP Theme Detector Colors */
+    --indigo-500: 238 78% 65%;
+    --teal-400: 180 84% 60%;
+    
+    /* Dark Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--indigo-500)), hsl(var(--teal-400)));
+    --gradient-background: linear-gradient(135deg, hsl(220 30% 10%), hsl(230 35% 15%));
+    
+    /* Glassmorphism Dark */
+    --glass-bg: rgba(0, 0, 0, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 }
 
