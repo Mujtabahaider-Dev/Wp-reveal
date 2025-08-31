@@ -61,25 +61,24 @@ export const WPThemeDetector = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-background flex items-center justify-center p-4 relative">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-10">
-        <ThemeToggle />
-      </div>
+    <div className="min-h-screen bg-gradient-background flex flex-col">
+      <Header />
       
-      <div className="w-full max-w-2xl mx-auto space-y-8">
-        {/* Header */}
-        <header className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="p-3 rounded-2xl bg-white/30 dark:bg-white/10 backdrop-blur-sm border border-white/20">
-              <Globe className="w-8 h-8 text-white" aria-hidden="true" />
+      <main className="flex-1 flex items-center justify-center p-4 relative">
+      
+        <div className="w-full max-w-2xl mx-auto space-y-8">
+          {/* Hero Section */}
+          <section className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="p-3 rounded-2xl bg-white/30 dark:bg-white/10 backdrop-blur-sm border border-white/20">
+                <Globe className="w-8 h-8 text-white" aria-hidden="true" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">Detect Any WordPress Theme</h1>
             </div>
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">WP Theme Detector</h1>
-          </div>
-          <p className="text-white/90 text-lg drop-shadow-md">
-            Free online tool to discover which WordPress theme any website is using
-          </p>
-        </header>
+            <p className="text-white/90 text-lg md:text-xl drop-shadow-md max-w-2xl mx-auto">
+              Instantly discover which WordPress theme any website is using. Get detailed theme information including name, author, version, and more.
+            </p>
+          </section>
 
         {/* Input Card */}
         <section className="w-full">
@@ -252,13 +251,16 @@ export const WPThemeDetector = () => {
           </Card>
         </section>
 
-        {/* Footer */}
-        <footer className="text-center">
-          <p className="text-white/80 dark:text-white/70 text-sm drop-shadow-sm">
-            Free WordPress theme detection tool - Enter any WordPress website URL to identify its theme
-          </p>
-        </footer>
-      </div>
-    </main>
+          {/* Call to Action */}
+          <section className="text-center">
+            <p className="text-white/80 dark:text-white/70 text-sm drop-shadow-sm">
+              Free WordPress theme detection tool - Enter any WordPress website URL to identify its theme
+            </p>
+          </section>
+        </div>
+      </main>
+      
+      <Footer />
+    </div>
   );
 };
