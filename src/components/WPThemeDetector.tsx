@@ -61,7 +61,7 @@ export const WPThemeDetector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-background flex items-center justify-center p-4 relative">
+    <main className="min-h-screen bg-gradient-background flex items-center justify-center p-4 relative">
       {/* Theme Toggle */}
       <div className="absolute top-6 right-6 z-10">
         <ThemeToggle />
@@ -69,145 +69,196 @@ export const WPThemeDetector = () => {
       
       <div className="w-full max-w-lg mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center space-y-4">
+        <header className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="p-3 rounded-2xl bg-white/30 dark:bg-white/10 backdrop-blur-sm border border-white/20">
-              <Globe className="w-8 h-8 text-white" />
+              <Globe className="w-8 h-8 text-white" aria-hidden="true" />
             </div>
             <h1 className="text-4xl font-bold text-white drop-shadow-lg">WP Theme Detector</h1>
           </div>
           <p className="text-white/90 text-lg drop-shadow-md">
-            Discover which WordPress theme any website is using
+            Free online tool to discover which WordPress theme any website is using
           </p>
-        </div>
+        </header>
 
         {/* Input Card */}
-        <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
-          <form onSubmit={handleDetect} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Website URL
-              </label>
-              <div className="relative">
-                <Input
-                  id="url"
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-indigo-400 pr-10 bg-white/80 dark:bg-white/10 dark:text-white"
-                  disabled={isLoading}
-                />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-              </div>
-            </div>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              variant="gradient"
-              className="w-full py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Detecting Theme...
+        <section className="w-full">
+          <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
+            <form onSubmit={handleDetect} className="space-y-4" role="search" aria-label="WordPress theme detection">
+              <div className="space-y-2">
+                <label htmlFor="url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Website URL for WordPress Theme Detection
+                </label>
+                <div className="relative">
+                  <Input
+                    id="url"
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-indigo-400 pr-10 bg-white/80 dark:bg-white/10 dark:text-white"
+                    disabled={isLoading}
+                    aria-describedby="url-help"
+                    required
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                  <div id="url-help" className="sr-only">Enter the full URL of the WordPress website you want to analyze</div>
                 </div>
-              ) : (
-                "Detect Theme"
-              )}
-            </Button>
-          </form>
-        </Card>
+              </div>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                variant="gradient"
+                className="w-full py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
+                aria-label={isLoading ? "Detecting WordPress theme in progress" : "Start WordPress theme detection"}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                    Detecting Theme...
+                  </div>
+                ) : (
+                  "Detect WordPress Theme"
+                )}
+              </Button>
+            </form>
+          </Card>
+        </section>
 
         {/* Results Card */}
         {(result || error) && (
-          <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
-            {error ? (
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center">
-                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/50">
-                    <AlertCircle className="w-6 h-6 text-red-500 dark:text-red-400" />
+          <section className="w-full" aria-label="WordPress theme detection results">
+            <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
+              {error ? (
+                <div className="text-center space-y-3" role="alert">
+                  <div className="flex items-center justify-center">
+                    <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/50">
+                      <AlertCircle className="w-6 h-6 text-red-500 dark:text-red-400" aria-hidden="true" />
+                    </div>
                   </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">WordPress Theme Detection Failed</h3>
+                  <p className="text-red-500 dark:text-red-400">{error}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Detection Failed</h3>
-                <p className="text-red-500 dark:text-red-400">{error}</p>
-              </div>
-            ) : result ? (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+              ) : result ? (
+                <article className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">WordPress Theme Detected Successfully</h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">WordPress Theme Detected</h3>
-                </div>
 
-                <div className="grid gap-4">
-                  {result.name && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <Globe className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Theme Name</p>
-                        <p className="text-gray-900 dark:text-white font-semibold">{result.name}</p>
+                  <dl className="grid gap-4">
+                    {result.name && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <Globe className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+                        <div>
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Theme Name</dt>
+                          <dd className="text-gray-900 dark:text-white font-semibold">{result.name}</dd>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {result.author && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Author</p>
-                        <p className="text-gray-900 dark:text-white">{result.author}</p>
+                    {result.author && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <User className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+                        <div>
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Author</dt>
+                          <dd className="text-gray-900 dark:text-white">{result.author}</dd>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {result.version && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <Hash className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Version</p>
-                        <p className="text-gray-900 dark:text-white">{result.version}</p>
+                    {result.version && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <Hash className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+                        <div>
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Version</dt>
+                          <dd className="text-gray-900 dark:text-white">{result.version}</dd>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {result.description && (
-                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</p>
-                      <p className="text-gray-900 dark:text-white">{result.description}</p>
-                    </div>
-                  )}
-
-                  {result.uri && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <ExternalLink className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Theme URI</p>
-                        <a 
-                          href={result.uri} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
-                        >
-                          {result.uri}
-                        </a>
+                    {result.description && (
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Description</dt>
+                        <dd className="text-gray-900 dark:text-white">{result.description}</dd>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </Card>
+                    )}
+
+                    {result.uri && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <ExternalLink className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+                        <div className="flex-1">
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Theme URI</dt>
+                          <dd>
+                            <a 
+                              href={result.uri} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium break-all"
+                              aria-label={`Visit theme homepage for ${result.name || 'detected theme'}`}
+                            >
+                              {result.uri}
+                            </a>
+                          </dd>
+                        </div>
+                      </div>
+                    )}
+                  </dl>
+                </article>
+              ) : null}
+            </Card>
+          </section>
         )}
 
+        {/* SEO Content */}
+        <section className="w-full max-w-4xl mx-auto mt-16">
+          <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">About WordPress Theme Detection</h2>
+              <div className="grid md:grid-cols-2 gap-6 text-gray-700 dark:text-gray-300">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">How It Works</h3>
+                  <p className="mb-3 text-sm">
+                    Our WordPress theme detector analyzes websites to identify the active WordPress theme. 
+                    Simply enter any website URL, and our tool will scan for WordPress-specific files and 
+                    extract theme information including name, author, version, and description.
+                  </p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Key Features</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Instant WordPress theme detection</li>
+                    <li>Theme name and author identification</li>
+                    <li>Version and description details</li>
+                    <li>Free to use, no registration required</li>
+                    <li>Works with any WordPress website</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Why Use a Theme Detector?</h3>
+                  <p className="mb-3 text-sm">
+                    Discovering which WordPress theme a website uses can help you find inspiration for your own site, 
+                    identify well-designed themes, or understand the technical foundation of websites you admire.
+                  </p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Detection Accuracy</h3>
+                  <p className="text-sm">
+                    Our detection algorithm analyzes multiple WordPress-specific markers to ensure accurate theme 
+                    identification. The tool works best with standard WordPress installations and may have limited 
+                    success with heavily customized or headless WordPress setups.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
+
         {/* Footer */}
-        <div className="text-center">
+        <footer className="text-center">
           <p className="text-white/80 dark:text-white/70 text-sm drop-shadow-sm">
-            Enter any WordPress website URL to detect its theme
+            Free WordPress theme detection tool - Enter any WordPress website URL to identify its theme
           </p>
-        </div>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 };
