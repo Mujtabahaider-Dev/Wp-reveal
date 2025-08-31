@@ -67,7 +67,7 @@ export const WPThemeDetector = () => {
         <ThemeToggle />
       </div>
       
-      <div className="w-full max-w-lg mx-auto space-y-8">
+      <div className="w-full max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <header className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -213,7 +213,7 @@ export const WPThemeDetector = () => {
         )}
 
         {/* SEO Content */}
-        <section className="w-full max-w-4xl mx-auto mt-16">
+        <section className="w-full mt-16">
           <Card className="backdrop-blur-sm bg-white/85 dark:bg-black/40 border-white/30 dark:border-white/10 shadow-xl p-6" style={{ boxShadow: 'var(--glass-shadow)' }}>
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">About WordPress Theme Detection</h2>
