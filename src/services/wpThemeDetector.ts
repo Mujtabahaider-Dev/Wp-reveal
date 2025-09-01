@@ -114,6 +114,30 @@ export class WPThemeDetectorService {
     return plugins.slice(0, 10); // Limit to first 10 plugins
   }
 
+  private static extractThemeFromPaths(htmlContent: string): string[] {
+    const themeNames = new Set<string>();
+    
+    // Extract all theme folder references
+    const themePathPatterns = [
+      /\/wp-content\/themes\/([^\/'"?\s]+)/gi,
+      /\/themes\/([^\/'"?\s]+)/gi,
+      /wp-content\/themes\/([^\/'"?\s]+)/gi
+    ];
+
+    themePathPatterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(htmlContent)) !== null) {
+        const themeName = match[1];
+        // Filter out common non-theme folders
+        if (!['plugins', 'uploads', 'cache', 'mu-plugins'].includes(themeName)) {
+          themeNames.add(themeName);
+        }
+      }
+    });
+
+    return Array.from(themeNames);
+  }
+
   private static async advancedThemeDetection(siteUrl: string, htmlContent: string): Promise<Partial<ThemeInfo>> {
     const detectionMethods = [];
     let themeInfo: Partial<ThemeInfo> = {};
@@ -139,14 +163,37 @@ export class WPThemeDetectorService {
       }
     }
 
-    // Method 2: Meta generator detection
+    // Method 2: Theme folder path extraction (your suggestion!)
+    if (!themeInfo.name) {
+      const themeNames = this.extractThemeFromPaths(htmlContent);
+      if (themeNames.length > 0) {
+        detectionMethods.push('Theme Folder Path');
+        // Prioritize the most common theme name found
+        const themeCounts = themeNames.reduce((acc, name) => {
+          acc[name] = (acc[name] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const mostCommonTheme = Object.entries(themeCounts)
+          .sort(([,a], [,b]) => b - a)[0];
+        
+        if (mostCommonTheme) {
+          themeInfo.name = mostCommonTheme[0];
+          // Try to find a stylesheet URL for this theme
+          const possibleStyleUrl = `${siteUrl}/wp-content/themes/${themeInfo.name}/style.css`;
+          themeInfo.themeUrl = possibleStyleUrl;
+        }
+      }
+    }
+
+    // Method 3: Meta generator detection
     const generatorMatch = htmlContent.match(/<meta name=['"](generator|theme)['"]\s+content=['"](.*?)['"]/i);
     if (generatorMatch && !themeInfo.name) {
       detectionMethods.push('Meta Generator');
       themeInfo.name = generatorMatch[2];
     }
 
-    // Method 3: CSS file name patterns
+    // Method 4: CSS file name patterns (any CSS file from themes folder)
     const cssPatterns = [
       /href=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.css[^'"]*)['"]/gi,
       /href=['"](.*?\/themes\/([^\/'"]+)\/[^'"]*\.css[^'"]*)['"]/gi
@@ -162,35 +209,35 @@ export class WPThemeDetectorService {
       }
     }
 
-    // Method 4: JavaScript file detection
+    // Method 5: JavaScript file detection
     const jsThemeMatch = htmlContent.match(/src=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.js[^'"]*)['"]/i);
     if (jsThemeMatch && !themeInfo.name) {
       detectionMethods.push('JavaScript Pattern');
       themeInfo.name = jsThemeMatch[2];
     }
 
-    // Method 5: Image file detection
+    // Method 6: Image file detection
     const imgThemeMatch = htmlContent.match(/src=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.(png|jpg|jpeg|gif|svg)[^'"]*)['"]/i);
     if (imgThemeMatch && !themeInfo.name) {
       detectionMethods.push('Image Pattern');
       themeInfo.name = imgThemeMatch[2];
     }
 
-    // Method 6: Template directory detection
+    // Method 7: Template directory detection
     const templateMatch = htmlContent.match(/template-directory['"]\s*:\s*['"](.*?\/wp-content\/themes\/([^\/'"]+))['"]/i);
     if (templateMatch && !themeInfo.name) {
       detectionMethods.push('Template Directory');
       themeInfo.name = templateMatch[2];
     }
 
-    // Method 7: Body class detection
+    // Method 8: Body class detection
     const bodyClassMatch = htmlContent.match(/<body[^>]*class=['"]*[^'"]*theme-([^'">\s]+)/i);
     if (bodyClassMatch && !themeInfo.name) {
       detectionMethods.push('Body Class');
       themeInfo.name = bodyClassMatch[1];
     }
 
-    // Method 8: WordPress theme directory API check
+    // Method 9: WordPress theme directory API check
     if (themeInfo.name) {
       try {
         const apiUrl = `https://api.wordpress.org/themes/info/1.1/?action=theme_information&request[slug]=${themeInfo.name}`;
