@@ -53,6 +53,9 @@ All colors MUST be HSL.
     --glass-border: rgba(255, 255, 255, 0.3);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 
+    /* Performance optimizations */
+    --transform-gpu: translateZ(0);
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -125,9 +128,30 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    /* Enable hardware acceleration for smoother animations */
+    transform: var(--transform-gpu);
   }
 
   body {
     @apply bg-background text-foreground;
+    /* Optimize font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Optimize animations for better performance */
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Optimize image loading */
+  img {
+    content-visibility: auto;
   }
 }
