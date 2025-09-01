@@ -206,6 +206,43 @@ export const WPThemeDetector = () => {
                         </div>
                       </div>
                     )}
+                    {result.detectionMethod && (
+                      <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                        <dt className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Detection Method</dt>
+                        <dd className="text-blue-900 dark:text-blue-300 text-sm">{result.detectionMethod}</dd>
+                      </div>
+                    )}
+
+                    {result.childTheme && (
+                      <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                        <dt className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">Child Theme</dt>
+                        <dd className="text-purple-900 dark:text-purple-300">
+                          <div className="font-semibold">{result.childTheme.name}</div>
+                          <div className="text-sm">Parent: {result.childTheme.parent}</div>
+                        </dd>
+                      </div>
+                    )}
+
+                    {result.plugins && result.plugins.length > 0 && (
+                      <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <dt className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">Detected Plugins</dt>
+                        <dd className="flex flex-wrap gap-1">
+                          {result.plugins.slice(0, 8).map((plugin, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded text-xs"
+                            >
+                              {plugin}
+                            </span>
+                          ))}
+                          {result.plugins.length > 8 && (
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded text-xs">
+                              +{result.plugins.length - 8} more
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    )}
                   </dl>
                 </article>
               ) : null}

@@ -6,6 +6,12 @@ export interface ThemeInfo {
   uri?: string;
   isWordPress: boolean;
   themeUrl?: string;
+  detectionMethod?: string;
+  plugins?: string[];
+  childTheme?: {
+    name: string;
+    parent: string;
+  };
 }
 
 export interface DetectionResult {
@@ -27,14 +33,26 @@ export class WPThemeDetectorService {
       console.log('Direct fetch failed, trying with CORS proxy');
     }
 
-    // Use a CORS proxy as fallback
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.statusText}`);
+    // Use multiple CORS proxies as fallbacks
+    const proxies = [
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`
+    ];
+
+    for (const proxyUrl of proxies) {
+      try {
+        const response = await fetch(proxyUrl);
+        if (response.ok) {
+          const data = await response.json();
+          return data.contents || data;
+        }
+      } catch (error) {
+        console.log(`Proxy ${proxyUrl} failed, trying next...`);
+      }
     }
-    const data = await response.json();
-    return data.contents;
+    
+    throw new Error('All proxy methods failed');
   }
 
   private static extractThemeInfo(cssContent: string): Partial<ThemeInfo> {
@@ -59,8 +77,140 @@ export class WPThemeDetectorService {
       
       const uriMatch = header.match(/Theme URI:\s*(.+)/i);
       if (uriMatch) themeInfo.uri = uriMatch[1].trim();
+
+      // Check for child theme
+      const templateMatch = header.match(/Template:\s*(.+)/i);
+      if (templateMatch) {
+        themeInfo.childTheme = {
+          name: themeInfo.name || 'Unknown Child Theme',
+          parent: templateMatch[1].trim()
+        };
+      }
     }
     
+    return themeInfo;
+  }
+
+  private static detectPlugins(htmlContent: string): string[] {
+    const plugins: string[] = [];
+    
+    // Common plugin patterns
+    const pluginPatterns = [
+      /wp-content\/plugins\/([^\/'"]+)/g,
+      /wp_register_script\(['"]([^'"]+)['"]/g,
+      /wp_enqueue_script\(['"]([^'"]+)['"]/g
+    ];
+
+    pluginPatterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(htmlContent)) !== null) {
+        const pluginName = match[1];
+        if (!plugins.includes(pluginName)) {
+          plugins.push(pluginName);
+        }
+      }
+    });
+
+    return plugins.slice(0, 10); // Limit to first 10 plugins
+  }
+
+  private static async advancedThemeDetection(siteUrl: string, htmlContent: string): Promise<Partial<ThemeInfo>> {
+    const detectionMethods = [];
+    let themeInfo: Partial<ThemeInfo> = {};
+
+    // Method 1: Standard theme stylesheet detection
+    const themeStyleMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/[^\/]+\/style\.css[^'"]*)['"]/i);
+    if (themeStyleMatch) {
+      detectionMethods.push('Standard CSS');
+      const themeStyleUrl = themeStyleMatch[1];
+      const themeNameMatch = themeStyleUrl.match(/\/themes\/([^\/]+)\//);
+      
+      if (themeNameMatch) {
+        themeInfo.name = themeNameMatch[1];
+        themeInfo.themeUrl = themeStyleUrl;
+        
+        try {
+          const cssContent = await this.fetchWithCors(themeStyleUrl);
+          const cssThemeInfo = this.extractThemeInfo(cssContent);
+          themeInfo = { ...themeInfo, ...cssThemeInfo };
+        } catch (error) {
+          console.log('Could not fetch CSS details');
+        }
+      }
+    }
+
+    // Method 2: Meta generator detection
+    const generatorMatch = htmlContent.match(/<meta name=['"](generator|theme)['"]\s+content=['"](.*?)['"]/i);
+    if (generatorMatch && !themeInfo.name) {
+      detectionMethods.push('Meta Generator');
+      themeInfo.name = generatorMatch[2];
+    }
+
+    // Method 3: CSS file name patterns
+    const cssPatterns = [
+      /href=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.css[^'"]*)['"]/gi,
+      /href=['"](.*?\/themes\/([^\/'"]+)\/[^'"]*\.css[^'"]*)['"]/gi
+    ];
+
+    for (const pattern of cssPatterns) {
+      let match;
+      while ((match = pattern.exec(htmlContent)) !== null && !themeInfo.name) {
+        detectionMethods.push('CSS Pattern');
+        themeInfo.name = match[2];
+        themeInfo.themeUrl = match[1];
+        break;
+      }
+    }
+
+    // Method 4: JavaScript file detection
+    const jsThemeMatch = htmlContent.match(/src=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.js[^'"]*)['"]/i);
+    if (jsThemeMatch && !themeInfo.name) {
+      detectionMethods.push('JavaScript Pattern');
+      themeInfo.name = jsThemeMatch[2];
+    }
+
+    // Method 5: Image file detection
+    const imgThemeMatch = htmlContent.match(/src=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.(png|jpg|jpeg|gif|svg)[^'"]*)['"]/i);
+    if (imgThemeMatch && !themeInfo.name) {
+      detectionMethods.push('Image Pattern');
+      themeInfo.name = imgThemeMatch[2];
+    }
+
+    // Method 6: Template directory detection
+    const templateMatch = htmlContent.match(/template-directory['"]\s*:\s*['"](.*?\/wp-content\/themes\/([^\/'"]+))['"]/i);
+    if (templateMatch && !themeInfo.name) {
+      detectionMethods.push('Template Directory');
+      themeInfo.name = templateMatch[2];
+    }
+
+    // Method 7: Body class detection
+    const bodyClassMatch = htmlContent.match(/<body[^>]*class=['"]*[^'"]*theme-([^'">\s]+)/i);
+    if (bodyClassMatch && !themeInfo.name) {
+      detectionMethods.push('Body Class');
+      themeInfo.name = bodyClassMatch[1];
+    }
+
+    // Method 8: WordPress theme directory API check
+    if (themeInfo.name) {
+      try {
+        const apiUrl = `https://api.wordpress.org/themes/info/1.1/?action=theme_information&request[slug]=${themeInfo.name}`;
+        const apiResponse = await fetch(apiUrl);
+        if (apiResponse.ok) {
+          const apiData = await apiResponse.json();
+          if (apiData && !apiData.error) {
+            detectionMethods.push('WordPress API');
+            themeInfo.author = apiData.author?.display_name || themeInfo.author;
+            themeInfo.version = apiData.version || themeInfo.version;
+            themeInfo.description = apiData.description || themeInfo.description;
+            themeInfo.uri = apiData.homepage || themeInfo.uri;
+          }
+        }
+      } catch (error) {
+        console.log('WordPress API check failed');
+      }
+    }
+
+    themeInfo.detectionMethod = detectionMethods.join(', ');
     return themeInfo;
   }
 
@@ -74,62 +224,56 @@ export class WPThemeDetectorService {
       // Fetch the main page
       const htmlContent = await this.fetchWithCors(siteUrl);
       
-      // Check for WordPress indicators
-      const isWordPress = htmlContent.includes('/wp-content/') || 
-                         htmlContent.includes('wp-includes') ||
-                         htmlContent.includes('wordpress');
+      // Enhanced WordPress detection
+      const wpIndicators = [
+        '/wp-content/',
+        'wp-includes',
+        'wordpress',
+        'wp-json',
+        'wp-admin',
+        'wp_head',
+        'wp_footer',
+        'wp-embed',
+        'wlwmanifest',
+        'xmlrpc.php'
+      ];
+
+      const isWordPress = wpIndicators.some(indicator => 
+        htmlContent.toLowerCase().includes(indicator.toLowerCase())
+      );
 
       if (!isWordPress) {
+        // Try alternative detection for heavily customized sites
+        const alternativeCheck = await this.checkWordPressAlternative(siteUrl);
+        if (!alternativeCheck) {
+          return {
+            success: false,
+            error: "Could not detect a WordPress theme. This doesn't appear to be a WordPress site."
+          };
+        }
+      }
+
+      // Advanced theme detection
+      const themeInfo = await this.advancedThemeDetection(siteUrl, htmlContent);
+      
+      if (!themeInfo.name) {
         return {
           success: false,
-          error: "Could not detect a WordPress theme. This doesn't appear to be a WordPress site."
+          error: "WordPress site detected but theme could not be identified. The theme may be heavily customized or use a non-standard structure."
         };
       }
 
-      // Look for theme stylesheet link
-      const themeStyleMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/[^\/]+\/style\.css[^'"]*)['"]/i);
-      
-      if (!themeStyleMatch) {
-        return {
-          success: false,
-          error: "Could not detect a WordPress theme. Theme stylesheet not found."
-        };
-      }
+      // Detect plugins
+      const plugins = this.detectPlugins(htmlContent);
 
-      const themeStyleUrl = themeStyleMatch[1];
-      
-      // Extract theme name from URL
-      const themeNameMatch = themeStyleUrl.match(/\/themes\/([^\/]+)\//);
-      const themeName = themeNameMatch ? themeNameMatch[1] : 'Unknown';
-
-      try {
-        // Fetch theme CSS to get detailed info
-        const cssContent = await this.fetchWithCors(themeStyleUrl);
-        const themeInfo = this.extractThemeInfo(cssContent);
-
-        return {
-          success: true,
-          data: {
-            name: themeInfo.name || themeName,
-            author: themeInfo.author,
-            version: themeInfo.version,
-            description: themeInfo.description,
-            uri: themeInfo.uri,
-            isWordPress: true,
-            themeUrl: themeStyleUrl
-          }
-        };
-      } catch (cssError) {
-        // If we can't fetch CSS, return basic info
-        return {
-          success: true,
-          data: {
-            name: themeName,
-            isWordPress: true,
-            themeUrl: themeStyleUrl
-          }
-        };
-      }
+      return {
+        success: true,
+        data: {
+          ...themeInfo,
+          plugins,
+          isWordPress: true
+        }
+      };
 
     } catch (error) {
       return {
@@ -137,5 +281,26 @@ export class WPThemeDetectorService {
         error: error instanceof Error ? error.message : "Failed to analyze website"
       };
     }
+  }
+
+  private static async checkWordPressAlternative(siteUrl: string): Promise<boolean> {
+    const checkUrls = [
+      `${siteUrl}/wp-json/`,
+      `${siteUrl}/wp-admin/`,
+      `${siteUrl}/xmlrpc.php`,
+      `${siteUrl}/wp-login.php`
+    ];
+
+    for (const checkUrl of checkUrls) {
+      try {
+        const response = await fetch(checkUrl, { method: 'HEAD' });
+        if (response.status === 200 || response.status === 403) {
+          return true;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+    return false;
   }
 }
