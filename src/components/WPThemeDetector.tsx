@@ -9,6 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WPThemeDetectorService, type ThemeInfo } from "@/services/wpThemeDetector";
 import { Search, Globe, User, Hash, ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const WPThemeDetector = () => {
   const [url, setUrl] = useState("");
