@@ -53,7 +53,7 @@ export class WPThemeDetectorService {
   private static async fetchWithCors(url: string): Promise<string> {
     let lastError: Error | null = null;
 
-    // Try direct fetch first (fastest)
+    // Try direct fetch first (fastest) - this will fail due to CORS, but we try anyway
     try {
       const response = await this.fetchWithTimeout(url);
       if (response.ok) {
@@ -63,27 +63,81 @@ export class WPThemeDetectorService {
       lastError = error as Error;
     }
 
-    // Optimized proxy list - fastest and most reliable first
+    // Use more reliable CORS proxies with better error handling
     const proxies = [
-      { url: `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, parser: (data: any) => data.contents },
-      { url: `https://corsproxy.io/?${encodeURIComponent(url)}`, parser: (data: any) => data },
-      { url: `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`, parser: (data: any) => data }
+      { 
+        url: `https://corsproxy.io/?${encodeURIComponent(url)}`, 
+        parser: 'direct',
+        timeout: 15000
+      },
+      { 
+        url: `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, 
+        parser: 'json',
+        timeout: 12000
+      },
+      { 
+        url: `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`, 
+        parser: 'json',
+        timeout: 12000
+      },
+      { 
+        url: `https://cors.bridged.cc/${url}`, 
+        parser: 'direct',
+        timeout: 15000
+      },
+      { 
+        url: `https://cors.eu.org/${url}`, 
+        parser: 'direct',
+        timeout: 15000
+      }
     ];
 
-    for (const proxy of proxies) {
+    for (let i = 0; i < proxies.length; i++) {
+      const proxy = proxies[i];
       try {
-        const response = await this.fetchWithTimeout(proxy.url, 8000); // Shorter timeout for proxies
+        console.log(`Trying proxy ${i + 1}/${proxies.length}: ${proxy.url}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), proxy.timeout);
+        
+        const response = await fetch(proxy.url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; WPThemeDetector/1.0)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
-          const data = await response.json();
-          return proxy.parser(data);
+          if (proxy.parser === 'direct') {
+            // Direct HTML response
+            const content = await response.text();
+            if (content && content.length > 100) {
+              console.log(`Proxy ${i + 1} succeeded with ${content.length} characters`);
+              return content;
+            }
+          } else if (proxy.parser === 'json') {
+            // JSON response that needs parsing
+            const data = await response.json();
+            if (data && data.contents && data.contents.length > 100) {
+              console.log(`Proxy ${i + 1} succeeded with ${data.contents.length} characters`);
+              return data.contents;
+            }
+          }
         }
       } catch (error) {
+        console.log(`Proxy ${i + 1} failed:`, error instanceof Error ? error.message : 'Unknown error');
         lastError = error as Error;
         continue;
       }
     }
     
-    throw lastError || new Error('All fetch methods failed');
+    // If all proxies fail, provide a helpful error message
+    const errorMessage = lastError?.message || 'Unknown error';
+    throw new Error(`Unable to access this website. All CORS proxy methods failed. This is a common limitation when analyzing external websites from your browser. Error: ${errorMessage}`);
   }
 
   private static extractThemeInfo(cssContent: string): Partial<ThemeInfo> {
@@ -114,7 +168,7 @@ export class WPThemeDetectorService {
             parent: match[1].trim()
           };
         } else {
-          (themeInfo as any)[key] = match[1].trim();
+          (themeInfo as Record<string, unknown>)[key] = match[1].trim();
         }
       }
     });
@@ -126,7 +180,7 @@ export class WPThemeDetectorService {
     const plugins = new Set<string>();
     
     // Optimized single regex for plugin detection
-    const pluginPattern = /wp-content\/plugins\/([^\/'"?\s]+)/gi;
+    const pluginPattern = /wp-content\/plugins\/([^/'"?\s]+)/gi;
     let match;
     
     while ((match = pluginPattern.exec(htmlContent)) !== null && plugins.size < 15) {
@@ -143,7 +197,7 @@ export class WPThemeDetectorService {
     const themeNames = new Set<string>();
     
     // Single optimized regex for theme paths
-    const themePattern = /\/wp-content\/themes\/([^\/'"?\s]+)/gi;
+    const themePattern = /\/wp-content\/themes\/([^/'"?\s]+)/gi;
     let match;
     
     while ((match = themePattern.exec(htmlContent)) !== null && themeNames.size < 5) {
@@ -170,10 +224,10 @@ export class WPThemeDetectorService {
 
   private static async advancedThemeDetection(siteUrl: string, htmlContent: string): Promise<Partial<ThemeInfo>> {
     const detectionMethods: string[] = [];
-    let themeInfo: Partial<ThemeInfo> = {};
+    const themeInfo: Partial<ThemeInfo> = {};
 
     // Method 1: Direct CSS detection (most reliable and fastest)
-    const themeStyleMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/style\.css[^'"]*)['"]/i);
+    const themeStyleMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/([^/'"]+)\/style\.css[^'"]*)['"]/i);
     if (themeStyleMatch) {
       detectionMethods.push('Direct CSS');
       const [, themeStyleUrl, themeName] = themeStyleMatch;
@@ -209,7 +263,7 @@ export class WPThemeDetectorService {
 
     // Method 3: Alternative CSS patterns (broader search)
     if (!themeInfo.name) {
-      const cssMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/([^\/'"]+)\/[^'"]*\.css[^'"]*)['"]/i);
+      const cssMatch = htmlContent.match(/href=['"](.*?\/wp-content\/themes\/([^/'"]+)\/[^'"]*\.css[^'"]*)['"]/i);
       if (cssMatch) {
         detectionMethods.push('CSS Pattern');
         themeInfo.name = cssMatch[2];
