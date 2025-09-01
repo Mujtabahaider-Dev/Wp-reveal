@@ -11,7 +11,7 @@ export const Header = () => {
             <Globe className="w-6 h-6 text-white" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-xl font-heading font-bold text-white">WP Theme Detector</h1>
+            <h1 className="text-xl font-heading font-bold text-white">WP Reveal</h1>
             <p className="text-white/70 text-sm">Free WordPress Theme Analysis Tool</p>
           </div>
         </div>
