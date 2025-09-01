@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { WPThemeDetectorService, type ThemeInfo } from "@/services/wpThemeDetector";
 import { Search, Globe, User, Hash, ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
 
