@@ -143,12 +143,15 @@ export const WPThemeDetector = () => {
       
         <div className="w-full max-w-2xl mx-auto space-y-8">
           {/* Hero Section */}
-          <section className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="p-3 rounded-2xl bg-white/30 dark:bg-white/10 backdrop-blur-sm border border-white/20">
-                <Globe className="w-8 h-8 text-white" aria-hidden="true" />
+          <section className="text-center space-y-6">
+            <div className="flex flex-col items-center justify-center space-y-4 mb-8">
+              <div className="p-4 rounded-3xl bg-white/20 dark:bg-white/10 backdrop-blur-lg border border-white/30 shadow-2xl animate-pulse">
+                <Globe className="w-12 h-12 text-white drop-shadow-lg" aria-hidden="true" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">Detect Any WordPress Theme</h1>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white drop-shadow-2xl leading-tight">
+                WP Reveal
+              </h1>
+              <div className="h-1 w-24 bg-gradient-to-r from-white/40 via-white/80 to-white/40 rounded-full"></div>
             </div>
             <p className="text-white/90 text-lg md:text-xl drop-shadow-md max-w-2xl mx-auto">
               Instantly discover which WordPress theme any website is using. Get detailed theme information including name, author, version, and more.
